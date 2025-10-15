@@ -1,98 +1,224 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import * as ImagePicker from 'expo-image-picker';
+import { Text, View, TouchableOpacity, Image, TextInput, ScrollView, Alert } from "react-native";
+import { useState } from "react";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Platform } from "react-native";
+console.log("Platform:", Platform.OS);
+console.log("Document directory:", FileSystem.documentDirectory);
 
-export default function HomeScreen() {
+
+export default function Index() {
+  const [collectionName, setCollectionName] = useState("");
+  const [logo, setLogo] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
+  const router = useRouter();
+
+  const pickLogo = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant permission to access photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      setLogo(result.assets[0].uri);
+    }
+  };
+
+  const pickImages = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please grant permission to access photos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsMultipleSelection: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const newImages = result.assets.map(asset => asset.uri);
+      setImages([...images, ...newImages]);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index));
+  };
+
+  const saveCollection = async () => {
+    if (!collectionName.trim()) {
+      Alert.alert('Error', 'Please enter a collection name');
+      return;
+    }
+
+    if (!logo) {
+      Alert.alert('Error', 'Please select a logo');
+      return;
+    }
+
+    if (images.length === 0) {
+      Alert.alert('Error', 'Please add at least one image');
+      return;
+    }
+
+    try {
+      const documentDirectory = FileSystem.documentDirectory;
+
+      if (!documentDirectory) {
+        Alert.alert('Error', 'File system not available on this device');
+        return;
+      }
+
+      // Create collection folder
+      const collectionDir = `${documentDirectory}collections/${collectionName}/`;
+      await FileSystem.makeDirectoryAsync(collectionDir, { intermediates: true });
+
+      // Save logo
+      const logoExt = logo.split('.').pop();
+      const logoPath = `${collectionDir}logo.${logoExt}`;
+      await FileSystem.copyAsync({ from: logo, to: logoPath });
+
+      // Save images
+      const savedImagePaths: string[] = [];
+      for (let i = 0; i < images.length; i++) {
+        const ext = images[i].split('.').pop();
+        const imagePath = `${collectionDir}image_${i}.${ext}`;
+        await FileSystem.copyAsync({ from: images[i], to: imagePath });
+        savedImagePaths.push(imagePath);
+      }
+
+      // Save metadata in AsyncStorage
+      const collectionsRaw = await AsyncStorage.getItem('collections');
+      const collectionsArray = collectionsRaw ? JSON.parse(collectionsRaw) : [];
+
+      collectionsArray.push({
+        id: Date.now().toString(),
+        name: collectionName,
+        logo: logoPath,
+        images: savedImagePaths,
+        createdAt: new Date().toISOString(),
+      });
+
+      await AsyncStorage.setItem('collections', JSON.stringify(collectionsArray));
+
+      Alert.alert('Success', 'Collection saved successfully!', [
+        {
+          text: 'OK',
+          onPress: () => {
+            setCollectionName('');
+            setLogo(null);
+            setImages([]);
+            router.push('/collections');
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error('Error saving collection:', error);
+      Alert.alert('Error', 'Failed to save collection');
+    }
+  };
+
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <ScrollView className="flex-1 bg-gray-50">
+      <View className="p-6">
+        <Text className="text-4xl font-bold text-gray-800 mb-8">Create Collection</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        {/* Collection Name */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-gray-700 mb-2">Collection Name</Text>
+          <TextInput
+            className="bg-white border-2 border-gray-300 rounded-xl px-4 py-3 text-lg"
+            placeholder="Enter collection name"
+            value={collectionName}
+            onChangeText={setCollectionName}
+          />
+        </View>
+
+        {/* Logo Selection */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-gray-700 mb-2">Collection Logo</Text>
+          <TouchableOpacity
+            className="bg-blue-500 rounded-xl p-4 items-center"
+            onPress={pickLogo}
+          >
+            <Text className="text-white font-semibold text-lg">
+              {logo ? 'Change Logo' : 'Select Logo'}
+            </Text>
+          </TouchableOpacity>
+
+          {logo && (
+            <View className="mt-4 items-center">
+              <Image
+                source={{ uri: logo }}
+                className="w-32 h-32 rounded-xl"
+              />
+            </View>
+          )}
+        </View>
+
+        {/* Image Selection */}
+        <View className="mb-6">
+          <Text className="text-lg font-semibold text-gray-700 mb-2">
+            Collection Images ({images.length})
+          </Text>
+          <TouchableOpacity
+            className="bg-green-500 rounded-xl p-4 items-center"
+            onPress={pickImages}
+          >
+            <Text className="text-white font-semibold text-lg">Add Images</Text>
+          </TouchableOpacity>
+
+          {images.length > 0 && (
+            <View className="flex-row flex-wrap mt-4">
+              {images.map((img, index) => (
+                <View key={index} className="w-1/3 p-1">
+                  <Image
+                    source={{ uri: img }}
+                    className="w-full h-24 rounded-lg"
+                  />
+                  <TouchableOpacity
+                    className="absolute top-2 right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+                    onPress={() => removeImage(index)}
+                  >
+                    <Text className="text-white font-bold">×</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Save Button */}
+        <TouchableOpacity
+          className="bg-purple-600 rounded-xl p-4 items-center mt-4"
+          onPress={saveCollection}
+        >
+          <Text className="text-white font-bold text-xl">Save Collection</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          className="bg-gray-300 rounded-xl p-4 items-center mt-3 mb-8"
+          onPress={() => router.push('/collections')}
+        >
+          <Text className="text-gray-700 font-semibold text-lg">View Collections</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
