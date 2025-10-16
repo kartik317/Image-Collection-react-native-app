@@ -34,8 +34,8 @@ A beautiful, dark-themed React Native mobile application for creating and managi
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/image-collection.git
-   cd image-collection
+   git clone https://github.com/kartik317/Image-Collection-react-native-app
+   cd Image-Collection-react-native-app
    ```
 
 2. **Install dependencies**
