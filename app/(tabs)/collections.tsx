@@ -69,7 +69,6 @@ const Collections = () => {
             try {
               const collection = collections.find(c => c.id === collectionId);
               if (collection) {
-                // Delete directory
                 const documentDirectory = FS.documentDirectory;
                 if (documentDirectory) {
                   const collectionDir = `${documentDirectory}collections/${collection.name}/`;
@@ -77,7 +76,6 @@ const Collections = () => {
                 }
               }
 
-              // Update AsyncStorage
               const updatedCollections = collections.filter(c => c.id !== collectionId);
               await AsyncStorage.setItem('collections', JSON.stringify(updatedCollections));
               setCollections(updatedCollections);
@@ -92,55 +90,68 @@ const Collections = () => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-950">
       <ScrollView className="flex-1 p-6">
-        <View className="flex-row justify-between items-center mb-6">
-          <Text className="text-4xl font-bold text-gray-800">My Collections</Text>
+        <View className="flex-row justify-between items-center mb-8 mt-6">
+          <View>
+            <Text className="text-5xl font-bold text-white mb-2">Collections</Text>
+            <View className="h-1 w-16 bg-purple-500 rounded-full" />
+          </View>
           <TouchableOpacity
-            className="bg-blue-500 rounded-lg px-4 py-2"
+            className="bg-blue-600 rounded-xl px-5 py-3 shadow-lg"
             onPress={() => router.push('/')}
+            activeOpacity={0.8}
           >
-            <Text className="text-white font-semibold">+ New</Text>
+            <Text className="text-white font-bold text-base">+ New</Text>
           </TouchableOpacity>
         </View>
 
         {collections.length === 0 ? (
-          <View className="items-center justify-center mt-20">
-            <Text className="text-gray-400 text-lg">No collections yet</Text>
+          <View className="items-center justify-center mt-32">
+            <Text className="text-6xl mb-4">📚</Text>
+            <Text className="text-gray-400 text-xl mb-2">No collections yet</Text>
+            <Text className="text-gray-500 text-center mb-6 px-8">
+              Start building your gallery by creating your first collection
+            </Text>
             <TouchableOpacity
-              className="bg-blue-500 rounded-xl px-6 py-3 mt-4"
+              className="bg-purple-600 rounded-2xl px-8 py-4 shadow-lg"
               onPress={() => router.push('/')}
+              activeOpacity={0.8}
             >
-              <Text className="text-white font-semibold">Create First Collection</Text>
+              <Text className="text-white font-bold text-lg">Create First Collection</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View className="flex-row flex-wrap">
+          <View className="flex-row flex-wrap -mx-2">
             {collections.map((collection) => (
               <View key={collection.id} className="w-1/2 p-2">
                 <TouchableOpacity
-                  className="bg-white rounded-xl overflow-hidden shadow-sm"
+                  className="bg-gray-900 rounded-2xl overflow-hidden border border-gray-800 shadow-lg"
                   onPress={() => openCollection(collection)}
+                  activeOpacity={0.9}
                 >
                   <Image
                     source={{ uri: collection.logo }}
-                    className="w-full h-40"
+                    className="w-full h-44"
                     resizeMode="cover"
                   />
-                  <View className="p-3">
-                    <Text className="text-lg font-bold text-gray-800" numberOfLines={1}>
+                  <View className="p-4">
+                    <Text className="text-lg font-bold text-white mb-1" numberOfLines={1}>
                       {collection.name}
                     </Text>
-                    <Text className="text-sm text-gray-500 mt-1">
-                      {collection.images.length} images
-                    </Text>
+                    <View className="bg-gray-800 rounded-full px-3 py-1 self-start">
+                      <Text className="text-sm text-purple-400 font-semibold">
+                        {collection.images.length} {collection.images.length === 1 ? 'image' : 'images'}
+                      </Text>
+                    </View>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  className="absolute top-4 right-4 bg-red-500 rounded-full w-8 h-8 items-center justify-center"
+                  className="absolute top-4 right-4 bg-red-500 rounded-full w-9 h-9 items-center justify-center shadow-lg"
                   onPress={() => deleteCollection(collection.id)}
+                  activeOpacity={0.8}
                 >
-                  <Text className="text-white font-bold text-lg">×</Text>
+                  <Text className="text-white font-bold text-xl">×</Text>
                 </TouchableOpacity>
               </View>
             ))}
@@ -154,45 +165,56 @@ const Collections = () => {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 bg-gray-50">
-          <View className="bg-white p-6 shadow-sm">
+        <View className="flex-1 bg-gray-950">
+          <View className="bg-gray-900 p-6 pt-12 border-b border-gray-800">
             <View className="flex-row justify-between items-center">
-              <Text className="text-3xl font-bold text-gray-800">
-                {selectedCollection?.name}
-              </Text>
+              <View className="flex-1 mr-4">
+                <Text className="text-3xl font-bold text-white mb-2">
+                  {selectedCollection?.name}
+                </Text>
+                <View className="bg-gray-800 rounded-full px-3 py-1 self-start">
+                  <Text className="text-purple-400 font-semibold">
+                    {selectedCollection?.images.length} {selectedCollection?.images.length === 1 ? 'image' : 'images'}
+                  </Text>
+                </View>
+              </View>
               <View className="flex-row items-center">
                 <TouchableOpacity
-                  className="bg-blue-500 rounded-lg px-3 py-2 mr-2"
+                  className="bg-blue-600 rounded-xl px-4 py-2 mr-2"
                   onPress={() => {
                     if (selectedCollection) (router as any).push(`/edit/${selectedCollection.id}`);
                   }}
+                  activeOpacity={0.8}
                 >
-                  <Text className="text-white font-semibold">Edit</Text>
+                  <Text className="text-white font-bold">Edit</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  className="bg-gray-200 rounded-full w-10 h-10 items-center justify-center"
+                  className="bg-gray-800 rounded-full w-10 h-10 items-center justify-center"
                   onPress={() => setModalVisible(false)}
+                  activeOpacity={0.8}
                 >
-                  <Text className="text-gray-600 font-bold text-xl">×</Text>
+                  <Text className="text-gray-300 font-bold text-xl">×</Text>
                 </TouchableOpacity>
               </View>
             </View>
-            <Text className="text-gray-500 mt-2">
-              {selectedCollection?.images.length} images
-            </Text>
           </View>
 
-          <ScrollView className="flex-1 p-4">
-            <View className="flex-row flex-wrap">
+          <ScrollView className="flex-1 p-4 bg-gray-950">
+            <View className="flex-row flex-wrap -mx-1">
               {selectedCollection?.images.map((img, index) => (
-                <View key={index} className="w-1/2 p-2">
-                  <TouchableOpacity onPress={() => openFullscreen(img)}>
-                    <Image
-                      source={{ uri: img }}
-                      className="w-full h-48 rounded-xl"
-                      resizeMode="cover"
-                    />
+                <View key={index} className="w-1/2 p-1">
+                  <TouchableOpacity 
+                    onPress={() => openFullscreen(img)}
+                    activeOpacity={0.9}
+                  >
+                    <View className="bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
+                      <Image
+                        source={{ uri: img }}
+                        className="w-full h-52"
+                        resizeMode="cover"
+                      />
+                    </View>
                   </TouchableOpacity>
                 </View>
               ))}
@@ -210,10 +232,11 @@ const Collections = () => {
       >
         <View className="flex-1 bg-black items-center justify-center">
           <TouchableOpacity
-            className="absolute top-8 left-4 z-50 bg-gray-200 rounded-full w-10 h-10 items-center justify-center"
+            className="absolute top-12 right-6 z-50 bg-gray-800 rounded-full w-12 h-12 items-center justify-center shadow-lg"
             onPress={closeFullscreen}
+            activeOpacity={0.8}
           >
-            <Text className="text-black text-xl">×</Text>
+            <Text className="text-white font-bold text-2xl">×</Text>
           </TouchableOpacity>
 
           {fullscreenImage && (

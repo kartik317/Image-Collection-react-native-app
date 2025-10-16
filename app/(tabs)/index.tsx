@@ -5,11 +5,6 @@ import { useState } from "react";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
-import { Platform } from "react-native";
-console.log("Platform:", Platform.OS);
-console.log("Document directory:", FileSystem.documentDirectory);
-
-
 export default function Index() {
   const [collectionName, setCollectionName] = useState("");
   const [logo, setLogo] = useState<string | null>(null);
@@ -84,16 +79,13 @@ export default function Index() {
         return;
       }
 
-      // Create collection folder
       const collectionDir = `${documentDirectory}collections/${collectionName}/`;
       await FileSystem.makeDirectoryAsync(collectionDir, { intermediates: true });
 
-      // Save logo
       const logoExt = logo.split('.').pop();
       const logoPath = `${collectionDir}logo.${logoExt}`;
       await FileSystem.copyAsync({ from: logo, to: logoPath });
 
-      // Save images
       const savedImagePaths: string[] = [];
       for (let i = 0; i < images.length; i++) {
         const ext = images[i].split('.').pop();
@@ -102,7 +94,6 @@ export default function Index() {
         savedImagePaths.push(imagePath);
       }
 
-      // Save metadata in AsyncStorage
       const collectionsRaw = await AsyncStorage.getItem('collections');
       const collectionsArray = collectionsRaw ? JSON.parse(collectionsRaw) : [];
 
@@ -133,91 +124,115 @@ export default function Index() {
     }
   };
 
-
   return (
-    <ScrollView className="flex-1 bg-gray-50">
-      <View className="p-6">
-        <Text className="text-4xl font-bold text-gray-800 mb-8">Create Collection</Text>
+    <ScrollView className="flex-1 bg-gray-950">
+      <View className="p-6 pt-12">
+        {/* Header with Gradient Text Effect */}
+        <View className="mb-8">
+          <Text className="text-5xl font-bold text-white mb-2">
+            Create Collection
+          </Text>
+          <View className="h-1 w-20 bg-purple-500 rounded-full" />
+        </View>
 
         {/* Collection Name */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-700 mb-2">Collection Name</Text>
-          <TextInput
-            className="bg-white border-2 border-gray-300 rounded-xl px-4 py-3 text-lg"
-            placeholder="Enter collection name"
-            value={collectionName}
-            onChangeText={setCollectionName}
-          />
+        <View className="mb-8">
+          <Text className="text-base font-semibold text-gray-300 mb-3 tracking-wide">
+            COLLECTION NAME
+          </Text>
+          <View className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
+            <TextInput
+              className="px-5 py-4 text-white text-lg"
+              placeholder="Enter collection name"
+              placeholderTextColor="#6b7280"
+              value={collectionName}
+              onChangeText={setCollectionName}
+            />
+          </View>
         </View>
 
         {/* Logo Selection */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-700 mb-2">Collection Logo</Text>
+        <View className="mb-8">
+          <Text className="text-base font-semibold text-gray-300 mb-3 tracking-wide">
+            COLLECTION LOGO
+          </Text>
+          
           <TouchableOpacity
-            className="bg-blue-500 rounded-xl p-4 items-center"
+            className="bg-blue-600 rounded-2xl p-5 items-center shadow-lg"
             onPress={pickLogo}
+            activeOpacity={0.8}
           >
-            <Text className="text-white font-semibold text-lg">
-              {logo ? 'Change Logo' : 'Select Logo'}
+            <Text className="text-white font-bold text-lg">
+              {logo ? '✓ Change Logo' : '+ Select Logo'}
             </Text>
           </TouchableOpacity>
 
           {logo && (
-            <View className="mt-4 items-center">
-              <Image
-                source={{ uri: logo }}
-                className="w-32 h-32 rounded-xl"
-              />
+            <View className="mt-6 items-center">
+              <View className="bg-gray-900 p-2 rounded-3xl border-2 border-gray-800 shadow-2xl">
+                <Image
+                  source={{ uri: logo }}
+                  className="w-40 h-40 rounded-2xl"
+                />
+              </View>
             </View>
           )}
         </View>
 
         {/* Image Selection */}
-        <View className="mb-6">
-          <Text className="text-lg font-semibold text-gray-700 mb-2">
-            Collection Images ({images.length})
-          </Text>
+        <View className="mb-8">
+          <View className="flex-row justify-between items-center mb-3">
+            <Text className="text-base font-semibold text-gray-300 tracking-wide">
+              COLLECTION IMAGES
+            </Text>
+            <View className="bg-gray-800 px-4 py-2 rounded-full">
+              <Text className="text-purple-400 font-bold text-sm">
+                {images.length} {images.length === 1 ? 'image' : 'images'}
+              </Text>
+            </View>
+          </View>
+          
           <TouchableOpacity
-            className="bg-green-500 rounded-xl p-4 items-center"
+            className="bg-emerald-600 rounded-2xl p-5 items-center shadow-lg"
             onPress={pickImages}
+            activeOpacity={0.8}
           >
-            <Text className="text-white font-semibold text-lg">Add Images</Text>
+            <Text className="text-white font-bold text-lg">+ Add Images</Text>
           </TouchableOpacity>
 
           {images.length > 0 && (
-            <View className="flex-row flex-wrap mt-4">
+            <View className="flex-row flex-wrap mt-6 -mx-1">
               {images.map((img, index) => (
                 <View key={index} className="w-1/3 p-1">
-                  <Image
-                    source={{ uri: img }}
-                    className="w-full h-24 rounded-lg"
-                  />
-                  <TouchableOpacity
-                    className="absolute top-2 right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
-                    onPress={() => removeImage(index)}
-                  >
-                    <Text className="text-white font-bold">×</Text>
-                  </TouchableOpacity>
+                  <View className="relative bg-gray-900 rounded-xl overflow-hidden border border-gray-800">
+                    <Image
+                      source={{ uri: img }}
+                      className="w-full h-28"
+                    />
+                    <TouchableOpacity
+                      className="absolute top-2 right-2 bg-red-500 rounded-full w-8 h-8 items-center justify-center shadow-lg"
+                      onPress={() => removeImage(index)}
+                      activeOpacity={0.8}
+                    >
+                      <Text className="text-white font-bold text-lg">×</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))}
             </View>
           )}
         </View>
 
-        {/* Save Button */}
-        <TouchableOpacity
-          className="bg-purple-600 rounded-xl p-4 items-center mt-4"
-          onPress={saveCollection}
-        >
-          <Text className="text-white font-bold text-xl">Save Collection</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="bg-gray-300 rounded-xl p-4 items-center mt-3 mb-8"
-          onPress={() => router.push('/collections')}
-        >
-          <Text className="text-gray-700 font-semibold text-lg">View Collections</Text>
-        </TouchableOpacity>
+        {/* Action Buttons */}
+        <View className="space-y-3 mb-8">
+          <TouchableOpacity
+            className="bg-purple-600 rounded-2xl p-5 items-center shadow-2xl"
+            onPress={saveCollection}
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-bold text-xl">💾 Save Collection</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
